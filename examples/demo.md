@@ -1,61 +1,61 @@
 # Demo Runbook
 
-Un runbook di esempio per testare l'MVP localmente.
+A sample runbook for testing the MVP locally.
 
-## Stampa messaggio di benvenuto
+## Print welcome message
 
-Verifica che l'output di testo funzioni correttamente.
+Verify that text output works correctly.
 
 ```bash
-echo "=== Runbook avviato ==="
-echo "Data: $(date)"
-echo "Utente: $(whoami)"
+echo "=== Runbook started ==="
+echo "Date: $(date)"
+echo "User: $(whoami)"
 echo "Directory: $(pwd)"
 ```
 
-## Saluta l'utente
+## Greet the user
 
-<!-- runbook:rollback: echo "Operazione annullata per ${NAME}" -->
+<!-- runbook:rollback: echo "Operation cancelled for ${NAME}" -->
 
-Usa la variabile `${NAME}` per personalizzare il messaggio.
+Uses the `${NAME}` variable to personalise the message.
 
 ```bash
-echo "Ciao, ${NAME}!"
-echo "Benvenuto nel runbook interattivo."
+echo "Hello, ${NAME}!"
+echo "Welcome to the interactive runbook."
 ```
 
-## Conferma manuale
+## Manual confirmation
 
 <!-- runbook:manual -->
 
-Verifica visivamente che i passi precedenti abbiano prodotto l'output atteso,
-poi premi `r` per confermare e procedere.
+Visually verify that the previous steps produced the expected output,
+then press `r` to confirm and continue.
 
 ```bash
-echo "conferma avvenuta"
+echo "confirmation received"
 ```
 
-## Elaborazione multi-step
+## Multi-step processing
 
-<!-- runbook:rollback: echo "Rollback elaborazione: ripristino stato iniziale" -->
+<!-- runbook:rollback: echo "Rollback processing: restoring initial state" -->
 
-Simula un'operazione che richiede qualche secondo.
+Simulates an operation that takes a few seconds.
 
 ```bash
-echo "Fase 1/3: preparazione..."
+echo "Phase 1/3: preparation..."
 sleep 1
-echo "Fase 2/3: elaborazione..."
+echo "Phase 2/3: processing..."
 sleep 1
-echo "Fase 3/3: completamento..."
-echo "Fatto."
+echo "Phase 3/3: completion..."
+echo "Done."
 ```
 
-## Step che fallisce intenzionalmente
+## Intentionally failing step
 
-Questo step termina con exit code 1 per mostrare la gestione degli errori.
+This step exits with code 1 to demonstrate error handling.
 
 ```bash
-echo "Questo comando sta per fallire..."
-echo "Errore simulato" >&2
+echo "This command is about to fail..."
+echo "Simulated error" >&2
 exit 1
 ```
