@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. Tests must pass before building anything
+  # ------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest --tb=short -q
+
+  # ------------------------------------------------------------------
+  # 2. Python wheel + sdist (pure Python, works on any OS)
+  # ------------------------------------------------------------------
+  build-wheel:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Build wheel and sdist
+        run: |
+          pip install build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: dist/
+
+  # ------------------------------------------------------------------
+  # 3. Standalone binaries via PyInstaller (no Python required)
+  # ------------------------------------------------------------------
+  build-binary:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: runbook-linux-x86_64
+          - os: macos-latest
+            asset: runbook-macos-arm64
+          - os: macos-13
+            asset: runbook-macos-x86_64
+          - os: windows-latest
+            asset: runbook-windows-x86_64.exe
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and PyInstaller
+        run: pip install -e "." pyinstaller
+
+      - name: Build binary
+        shell: bash
+        run: |
+          pyinstaller \
+            --onefile \
+            --name runbook \
+            --collect-all textual \
+            --collect-all rich \
+            runbook/__main__.py
+
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: mv dist/runbook dist/${{ matrix.asset }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: mv dist/runbook.exe "dist/${{ matrix.asset }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.os }}
+          path: dist/${{ matrix.asset }}
+
+  # ------------------------------------------------------------------
+  # 4. Create GitHub Release and attach all assets
+  # ------------------------------------------------------------------
+  release:
+    needs: [build-wheel, build-binary]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f | sort
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/wheel/*.whl
+            artifacts/wheel/*.tar.gz
+            artifacts/binary-ubuntu-latest/runbook-linux-x86_64
+            artifacts/binary-macos-latest/runbook-macos-arm64
+            artifacts/binary-macos-13/runbook-macos-x86_64
+            artifacts/binary-windows-latest/runbook-windows-x86_64.exe
