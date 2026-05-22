@@ -5,6 +5,8 @@ Interactive CLI tool to execute runbooks written in Markdown.
 Steps are defined with headings and bash code fences. The TUI lets you run,
 skip, rollback, and resume steps one at a time.
 
+![runbook TUI](docs/screenshot.svg)
+
 ## Quick start
 
 ```bash
